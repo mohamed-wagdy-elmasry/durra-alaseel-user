@@ -1,10 +1,10 @@
-name: Build & Upload to Apple App Store
+name: Deploy iOS to App Store
 
 on:
   workflow_dispatch:
     inputs:
-      upload_to_appstore:
-        description: 'Upload build to App Store Connect / TestFlight'
+      submit_to_testflight:
+        description: 'Upload directly to TestFlight / App Store Connect'
         required: true
         type: boolean
         default: true
@@ -13,83 +13,132 @@ on:
       - 'v*'
 
 jobs:
-  build_ios:
-    name: Build & Deploy iOS IPA
+  build-and-deploy:
+    name: Build & Deploy iOS
     runs-on: macos-14
+    timeout-minutes: 90
+
+    env:
+      BUNDLE_ID: "app.next.durratalaseel"
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
+      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+      CERTIFICATE_PRIVATE_KEY: ${{ secrets.CERTIFICATE_PRIVATE_KEY }}
 
     steps:
-      - name: Checkout Repository
+      - name: 1. Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
+      - name: 1b. Verify Xcode and Swift version
+        run: |
+          sw_vers
+          xcodebuild -version
+          swift --version
 
-      - name: Set up Flutter
+      - name: 2. Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 3. Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.0'
           channel: 'stable'
           cache: true
 
-      - name: Install Apple Certificate and Provisioning Profile
-        env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
-          P12_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.APPLE_PROVISION_PROFILE_BASE64 }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      - name: 4. Install Codemagic CLI tools
         run: |
-          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          python -m pip install --upgrade pip
+          pip3 install codemagic-cli-tools
 
-          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
-          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode -o $PP_PATH
+      - name: 5. Initialize macOS Keychain
+        run: |
+          keychain initialize
 
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+      - name: 6. Fetch / Create Signing Files from Apple
+        run: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create \
+            --certificate-key "$CERTIFICATE_PRIVATE_KEY"
 
-          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
+      - name: 7. Add Certificates to Keychain
+        run: |
+          keychain add-certificates
 
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+      - name: 8. Install Provisioning Profiles for Xcode
+        run: |
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+          SRC_DIR="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          if [ -d "$SRC_DIR" ]; then
+            for f in "$SRC_DIR"/*.mobileprovision "$SRC_DIR"/*.provisionprofile; do
+              if [ -f "$f" ]; then
+                echo "Found profile: $f"
+                UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< $(security cms -D -i "$f") 2>/dev/null || true)
+                if [ -n "$UUID" ]; then
+                  echo "-> Installing as UUID: $PROFILES_DIR/$UUID.mobileprovision"
+                  cp -f "$f" "$PROFILES_DIR/$UUID.mobileprovision"
+                fi
+              fi
+            done
+          fi
+          echo "Installed profiles in $PROFILES_DIR:"
+          ls -la "$PROFILES_DIR" || true
 
-      - name: Install Dependencies
+      - name: 9. Apply Provisioning Profiles to Xcode Project
+        run: |
+          xcode-project use-profiles --export-options-plist=ios/ExportOptions.plist
+
+      - name: 10. Install Flutter dependencies
         run: |
           flutter pub get
-          cd ios && pod install && cd ..
 
-      - name: Build iOS IPA
+      - name: 11. Install CocoaPods dependencies
         run: |
-          flutter build ipa --release --export-options-plist=ios/ExportOptions.plist
+          cd ios
+          pod install --repo-update
+          cd ..
 
-      - name: Upload IPA Artifact to GitHub
+      - name: 12. Run Flutter Analyze
+        run: |
+          flutter analyze --no-fatal-infos || true
+
+      - name: 13. Build Signed IPA for App Store
+        run: |
+          BUILD_NUM=$(( 10 + ${{ github.run_number }} ))
+          echo "Building iOS with version 1.2.0 (Build: $BUILD_NUM)"
+          flutter build ipa \
+            --release \
+            --build-name=1.2.0 \
+            --build-number=$BUILD_NUM \
+            --export-options-plist=ios/ExportOptions.plist
+          echo "BUILD_NUM=$BUILD_NUM" >> $GITHUB_ENV
+
+      - name: 14. Locate IPA File
+        run: |
+          IPA_FILE=$(find build/ios/ipa -name "*.ipa" | head -n 1)
+          if [ -z "$IPA_FILE" ]; then
+            echo "::error::No .ipa file found in build/ios/ipa"
+            exit 1
+          fi
+          echo "Found IPA: $IPA_FILE"
+          echo "IPA_PATH=$IPA_FILE" >> $GITHUB_ENV
+
+      - name: 15. Save IPA as GitHub Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-ipa
-          path: build/ios/ipa/*.ipa
+          name: durra-alaseel-ios-ipa
+          path: ${{ env.IPA_PATH }}
+          retention-days: 14
 
-      - name: Upload to App Store Connect / TestFlight
-        if: ${{ inputs.upload_to_appstore || startsWith(github.ref, 'refs/tags/v') }}
-        env:
-          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
-          APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
-          APPSTORE_API_PRIVATE_KEY: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
-        run: |
-          API_KEY_DIR=~/.appstoreconnect/private_keys
-          mkdir -p $API_KEY_DIR
-          echo "$APPSTORE_API_PRIVATE_KEY" > $API_KEY_DIR/AuthKey_${APPSTORE_API_KEY_ID}.p8
-
-          IPA_PATH=$(find build/ios/ipa -name "*.ipa" | head -n 1)
-          echo "Uploading $IPA_PATH to App Store Connect..."
-
-          xcrun altool --upload-app \
-            --type ios \
-            --file "$IPA_PATH" \
-            --apiKey "$APPSTORE_API_KEY_ID" \
-            --apiIssuer "$APPSTORE_ISSUER_ID"
+      - name: 16. Upload to App Store Connect / TestFlight
+        if: ${{ github.event_name == 'push' || inputs.submit_to_testflight }}
+        uses: apple-actions/upload-testflight-build@v5
+        with:
+          app-path: ${{ env.IPA_PATH }}
+          issuer-id: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          api-key-id: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
+          api-private-key: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          uses-non-exempt-encryption: 'false'
+          wait-for-processing: false
