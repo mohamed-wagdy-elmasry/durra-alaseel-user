@@ -57,6 +57,8 @@ jobs:
 
       - name: 6. Fetch / Create Signing Files from Apple
         run: |
+          export APP_STORE_CONNECT_ISSUER_ID="$(echo "$APP_STORE_CONNECT_ISSUER_ID" | tr -d '\r\n ')"
+          export APP_STORE_CONNECT_KEY_IDENTIFIER="$(echo "$APP_STORE_CONNECT_KEY_IDENTIFIER" | tr -d '\r\n ')"
           echo "$CERTIFICATE_PRIVATE_KEY" > cert_key.pem
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
