@@ -48,6 +48,8 @@ post_install do |installer|
       config.build_settings['ENABLE_BITCODE'] = 'NO'
       # Fix: Using bridging headers with module interfaces is unsupported
       config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'NO'
+      # Fix: Allow non-modular includes in framework modules
+      config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
       # Required for Xcode 15+ / Apple Silicon Macs
       config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
     end

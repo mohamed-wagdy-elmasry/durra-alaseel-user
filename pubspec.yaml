@@ -48,7 +48,6 @@ dependencies:
   pusher_beams: ^1.1.2
   permission_handler: ^11.0.1
   awesome_notifications: ^0.10.0
-  firebase_messaging: ^14.7.0
 
   # URL Launcher
   url_launcher: ^6.2.5
