@@ -57,10 +57,12 @@ jobs:
 
       - name: 6. Fetch / Create Signing Files from Apple
         run: |
+          echo "$CERTIFICATE_PRIVATE_KEY" > cert_key.pem
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create \
-            --certificate-key "$CERTIFICATE_PRIVATE_KEY"
+            --certificate-key "@file:cert_key.pem"
+          rm -f cert_key.pem
 
       - name: 7. Add Certificates to Keychain
         run: |
