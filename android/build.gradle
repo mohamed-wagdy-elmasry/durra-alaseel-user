@@ -1,0 +1,48 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.google.gms:google-services:4.4.1'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+subprojects { project ->
+    def setNamespace = {
+        if (project.hasProperty('android')) {
+            try {
+                if (project.android.namespace == null) {
+                    project.android.namespace = project.group
+                }
+            } catch (Exception e) {}
+        }
+    }
+    if (project.state.executed) {
+        setNamespace()
+    } else {
+        project.afterEvaluate {
+            setNamespace()
+        }
+    }
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
