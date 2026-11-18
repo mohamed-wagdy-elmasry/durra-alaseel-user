@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 import 'package:pusher_beams/pusher_beams.dart';
@@ -175,6 +176,7 @@ class PushNotificationController extends GetxController {
   /// The service will automatically create a publishable ID in the format:
   /// user-{userId}
   Future<void> subscribeUser(int userId) async {
+    if (Platform.isIOS) return;
     try {
       isLoading.value = true;
       _logger.i('🚀 Controller: Starting subscription for user $userId');
@@ -193,6 +195,7 @@ class PushNotificationController extends GetxController {
   /// Unsubscribe user from push notifications.
   /// Should be called on user logout.
   Future<void> unsubscribeUser() async {
+    if (Platform.isIOS) return;
     try {
       isLoading.value = true;
       _logger.i('Unsubscribing user from push notifications');

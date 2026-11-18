@@ -24,10 +24,15 @@ void main() async {
   // LocationService().setMockLocation(21.5474812, 39.2046468); // فرع السبعين
   LocationService().setMockLocation(21.56551597, 39.21182576); // الاربعين
   
-  // Check if app was opened from a notification action
-  final initialAction = await AwesomeNotifications().getInitialNotificationAction(
-    removeFromActionEvents: true,
-  );
+  // Check if app was opened from a notification action (with timeout & try-catch to prevent cold start freeze)
+  ReceivedAction? initialAction;
+  try {
+    initialAction = await AwesomeNotifications()
+        .getInitialNotificationAction(removeFromActionEvents: true)
+        .timeout(const Duration(milliseconds: 500), onTimeout: () => null);
+  } catch (e) {
+    debugPrint('Error getting initial notification action: $e');
+  }
   
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -94,7 +99,7 @@ class MyApp extends StatelessWidget {
               ).copyWith(textScaler: TextScaler.linear(1.0)),
               child: Directionality(
                 textDirection: LocaleService.to.textDirection,
-                child: widget!,
+                child: widget ?? const SizedBox.shrink(),
               ),
             ),
           );

@@ -42,17 +42,19 @@ class AppInitializer {
 
   static Future<void> _initializePushNotifications() async {
     try {
+      // Always register PushNotificationController in GetX so Get.find() never fails
+      final controller = Get.put(PushNotificationController(), permanent: true);
+
       // TODO: iOS requires APNs certificate setup in Pusher Beams dashboard
-      // Skipping iOS temporarily until APNs is configured
+      // Skipping iOS Pusher Beams network connection temporarily until APNs is configured
       if (Platform.isIOS) {
-        debugPrint('Push notifications: iOS initialization skipped (APNs not configured)');
+        debugPrint('Push notifications: iOS Pusher Beams skipped (APNs not configured)');
         return;
       }
 
       // Get this from https://dashboard.pusher.com/beams
       const instanceId = 'f80f6f50-1302-4c1f-b7ba-b64a57fcbd29';
 
-      final controller = Get.put(PushNotificationController());
       await controller.initializePushNotifications(instanceId);
 
       // Request notification permissions
@@ -74,12 +76,10 @@ class AppInitializer {
   static Future<void> _initializeAwesomeNotifications() async {
     try {
       // Initialize plugin with notification icon and channels
+      // On iOS defaultIcon must be null to use standard app icon; resource://drawable is Android-only
       final isInitialized = await AwesomeNotifications().initialize(
-        // Notification icon - using app launcher icon
-        NotificationChannels.notificationIcon,
-        // Notification channels
+        Platform.isAndroid ? NotificationChannels.notificationIcon : null,
         NotificationChannels.getAllChannels(),
-        // Channel groups
         channelGroups: NotificationChannels.getAllChannelGroups(),
         debug: false,
       );
@@ -95,34 +95,15 @@ class AppInitializer {
           onDismissActionReceivedMethod: AwesomeNotificationService.onDismissActionReceivedMethod,
         );
 
-        // Request notification permissions (required for Android 13+)
-        final isAllowed = await AwesomeNotifications().isNotificationAllowed();
-        if (!isAllowed) {
-          debugPrint('⚠️ Notification permission not granted - requesting now');
-          // Request permission explicitly (Android 13+ requires user approval)
-          await AwesomeNotifications().requestPermissionToSendNotifications();
-          final granted = await AwesomeNotifications().isNotificationAllowed();
-          if (granted) {
-            debugPrint('✅ Notification permissions granted by user');
-          } else {
-            debugPrint('❌ User denied notification permissions');
+        // Only request upfront notification permissions on Android (Android 13+)
+        // On iOS, system alert should not block before UI is ready
+        if (Platform.isAndroid) {
+          final isAllowed = await AwesomeNotifications().isNotificationAllowed();
+          if (!isAllowed) {
+            debugPrint('⚠️ Notification permission not granted - requesting now');
+            await AwesomeNotifications().requestPermissionToSendNotifications();
           }
-        } else {
-          debugPrint('✅ Notification permissions already granted');
         }
-
-        // TODO: iOS Setup - Uncomment when APNs is configured
-        // if (Platform.isIOS) {
-        //   await AwesomeNotifications().requestPermissionToSendNotifications(
-        //     channelKey: 'booking_channel',
-        //     permissions: [
-        //       NotificationPermission.Alert,
-        //       NotificationPermission.Sound,
-        //       NotificationPermission.Badge,
-        //       NotificationPermission.Vibration,
-        //     ],
-        //   );
-        // }
       } else {
         debugPrint('❌ Failed to initialize Awesome Notifications');
       }

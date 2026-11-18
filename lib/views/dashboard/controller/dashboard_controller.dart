@@ -12,7 +12,10 @@ import '../model/dashboard_info_model.dart';
 
 class DashboardController extends GetxController {
   final List<String> carType = [];
-  final pushController = Get.find<PushNotificationController>();
+  PushNotificationController get pushController =>
+      Get.isRegistered<PushNotificationController>()
+          ? Get.find<PushNotificationController>()
+          : Get.put(PushNotificationController(), permanent: true);
 
   RxInt currentIndex = 0.obs;
   RxString selectedDate = ''.obs;

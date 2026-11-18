@@ -6,7 +6,6 @@ import '../../../base/utils/basic_import.dart';
 import '../../../base/widgets/empty_data_widget.dart';
 import '../../../routes/routes.dart';
 import '../controller/history_controller.dart';
-import '../model/history_model.dart';
 part 'history_tablet_screen.dart';
 part 'history_mobile_screen.dart';
 part '../widget/history_card.dart';

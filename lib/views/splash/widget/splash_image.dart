@@ -10,12 +10,18 @@ class SplashImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(
-      () => CachedNetworkImage(
-        imageUrl: BasicServices.splashImage.value,
-        placeholder: (context, url) => const Text(''),
-        errorWidget: (context, url, error) => const Text(''),
-        fit: BoxFit.cover,
-      ),
+      () {
+        final url = BasicServices.splashImage.value;
+        if (url.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return CachedNetworkImage(
+          imageUrl: url,
+          placeholder: (context, url) => const SizedBox.shrink(),
+          errorWidget: (context, url, error) => const SizedBox.shrink(),
+          fit: BoxFit.cover,
+        );
+      },
     );
   }
 }

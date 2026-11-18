@@ -11,7 +11,6 @@ class HistoryCard extends GetView<HistoryController> {
 
     final enValue = cars.carTitle['en'];
     final carTitle = (enValue is Map ? enValue['car_title'] : enValue)?.toString() ?? 'N/A';
-    final carModel = cars.carModel?.toString() ?? '';
     final year = cars.year != 0 ? cars.year.toString() : '';
 
     return GestureDetector(

@@ -8,7 +8,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../base/api/endpoint/api_endpoint.dart';
 import '../../base/utils/local_storage.dart';
-import 'awesome_notification_service.dart';
 
 typedef NotificationCallback = Function(Map<String, dynamic>);
 typedef InterestCallback = Function(List<String>);
@@ -215,7 +214,6 @@ class PushNotificationService {
       
       // Use a Completer to wait for the authentication callback
       final completer = Completer<bool>();
-      bool authSucceeded = false;
       
       // Subscribe to user-specific notifications
       _logger.i('⏳ Calling PusherBeams.instance.setUserId...');
