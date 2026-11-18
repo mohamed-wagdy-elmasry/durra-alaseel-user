@@ -157,4 +157,3 @@ jobs:
           api-private-key: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
           uses-non-exempt-encryption: 'false'
           wait-for-processing: true
-          wait-for-processing-timeout: 30
