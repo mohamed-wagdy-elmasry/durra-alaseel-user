@@ -237,7 +237,6 @@ class PushNotificationService {
               _logger.e('3. Ensure backend auth endpoint returns: {"token": "..."}');
               _logger.e('4. Check if Instance ID and Primary Key are correct');
               _logger.e('═══════════════════════════════════════════════════');
-              authSucceeded = false;
               if (!completer.isCompleted) completer.complete(false);
             } else {
               _logger.i('═══════════════════════════════════════════════════');
@@ -252,7 +251,6 @@ class PushNotificationService {
               _logger.i('2. Test with Pusher dashboard → Authenticated Users');
               _logger.i('3. Enter User ID: $publishableId');
               _logger.i('═══════════════════════════════════════════════════');
-              authSucceeded = true;
               if (!completer.isCompleted) completer.complete(true);
             }
           },
