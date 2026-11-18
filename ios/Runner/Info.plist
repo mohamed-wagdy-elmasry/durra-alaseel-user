@@ -51,6 +51,10 @@
     <string>DRent requires photo library access to upload documents such as your driving license and profile picture.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>DRent uses your location to show nearby rental branches and help you choose a convenient car pickup location.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>DRent uses your location to show nearby rental branches and help you choose a convenient car pickup location.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>DRent uses your location to show nearby rental branches and help you choose a convenient car pickup location.</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>CFBundleAllowMixedLocalizations</key>
