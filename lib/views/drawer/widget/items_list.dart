@@ -71,6 +71,25 @@ class OthersWidgets extends StatelessWidget {
           },
           Colors.red, //
         ),
+        _itemCard(
+          Icons.delete_forever_outlined,
+          Strings.deleteAccount,
+          () {
+            Navigator.of(context).pop();
+            showModalBottomSheet(
+              context: context,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(Dimensions.radius * 1.5),
+                ),
+              ),
+              builder: (BuildContext context) {
+                return DeleteAccountBottomSheet();
+              },
+            );
+          },
+          Colors.red,
+        ),
       ],
     );
   }

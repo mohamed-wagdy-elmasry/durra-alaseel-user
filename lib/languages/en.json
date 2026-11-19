@@ -59,5 +59,8 @@
   "appLShortPassword": "The password must be at least 6 characters",
   "appLRefresh": "Refresh",
   "rejection_reason": "Rejection Reason",
-"cancel_reason": "Cancellation Reason"
+"cancel_reason": "Cancellation Reason",
+  "appLAreYouSureDelete": "Are you sure you want to delete your account? This action cannot be undone.",
+  "appLDeleteAccount": "Delete Account",
+  "appLDeleteAccountSuccess": "Account deleted successfully"
 }
