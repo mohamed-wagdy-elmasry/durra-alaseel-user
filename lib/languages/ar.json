@@ -59,8 +59,5 @@
   "appLShortPassword": "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
   "appLRefresh": "تحديث",
   "rejection_reason": "سبب الرفض",
-"cancel_reason": "سبب الإلغاء",
-  "appLAreYouSureDelete": "هل أنت متأكد من حذف حسابك؟ لا يمكن التراجع عن هذا الإجراء.",
-  "appLDeleteAccount": "حذف الحساب",
-  "appLDeleteAccountSuccess": "تم حذف الحساب بنجاح"
+"cancel_reason": "سبب الإلغاء"
 }

@@ -315,7 +315,4 @@ class Strings {
   static const String rejectionReason = 'appLRejectionReason';
   static const String cancelReason = 'appLCancelReason';
   static const String cancelled = 'appLCancelled';
-
-  static const String deleteAccount = 'appLDeleteAccount';
-  static const String deleteAccountSuccess = 'appLDeleteAccountSuccess';
 }

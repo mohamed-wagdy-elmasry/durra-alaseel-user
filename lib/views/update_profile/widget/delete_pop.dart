@@ -47,7 +47,7 @@ class DeletePop extends GetView<UpdateProfileController> {
           PrimaryButton(
             title: Strings.cancel,
             onPressed: () {
-              Navigator.of(context).pop();
+              Get.close(1);
             },
             buttonColor: Colors.white,
             borderColor: Colors.white,

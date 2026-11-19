@@ -9,7 +9,6 @@ import '../../dashboard/controller/dashboard_controller.dart';
 part 'drawer_tablet_screen.dart';
 part 'drawer_mobile_screen.dart';
 part '../widget/log_out_popup.dart';
-part '../widget/delete_account_popup.dart';
 part '../widget/items_list.dart';
 part '../widget/profile_image_box.dart';
 class DrawerScreen extends StatelessWidget {
